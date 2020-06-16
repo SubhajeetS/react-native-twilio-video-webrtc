@@ -12,10 +12,13 @@ import {
   View,
   Platform,
   UIManager,
-  findNodeHandle
+  findNodeHandle,
+  NativeModules
 } from 'react-native'
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+
+const TwilioModule = NativeModules.TwilioModule;
 
 const propTypes = {
   ...View.propTypes,
@@ -130,6 +133,7 @@ const nativeEvents = {
   toggleBluetoothHeadset: 11,
   stopPublishingVideo: 12,
   startPublishingVideo: 13, 
+  startScreenShare: 14,
 }
 
 class CustomTwilioVideoView extends Component {
@@ -159,6 +163,18 @@ class CustomTwilioVideoView extends Component {
 
   startPublishingVideo () {
     this.runCommand(nativeEvents.startPublishingVideo, [])
+  }
+
+  startScreenshare () {
+    this.runCommand(nativeEvents.startScreenShare, []);
+    TwilioModule.requestPermission()
+    .then(() => {
+      console.log("permission granted");
+    })
+    .catch((e) => {
+      console.log("permission failed", e);
+    });
+    
   }
 
   componentWillUnmount () {

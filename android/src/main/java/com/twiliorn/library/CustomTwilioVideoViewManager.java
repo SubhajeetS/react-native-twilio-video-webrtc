@@ -53,6 +53,7 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
     private static final int TOGGLE_BLUETOOTH_HEADSET = 11;
     private static final int STOP_PUBLISHING_VIDEO = 12;
     private static final int START_PUBLISHING_VIDEO = 13;
+    private static final int START_SCREEN_SHARE = 14;
 
     @Override
     public String getName() {
@@ -116,6 +117,9 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
             case START_PUBLISHING_VIDEO:
                 view.startPublishingVideo();
                 break;
+            case START_SCREEN_SHARE:
+                view.startScreenShare();
+                break;
         }
     }
 
@@ -165,6 +169,7 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
                 .put("toggleBluetoothHeadset", TOGGLE_BLUETOOTH_HEADSET)
                 .put("stopPublishingVideo", STOP_PUBLISHING_VIDEO)
                 .put("startPublishingVideo", START_PUBLISHING_VIDEO)
+                .put("startScreenShare", START_SCREEN_SHARE)
                 .build();
     }
 }

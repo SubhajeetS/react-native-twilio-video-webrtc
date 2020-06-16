@@ -1,9 +1,5 @@
-import React, { Component } from 'react'
-
-class TwilioBroadcastButton extends Component {
-  render () {
-   return null
-  }
+const TwilioBroadcastButton = () => {
+   return null;
 }
 
 module.exports = TwilioBroadcastButton

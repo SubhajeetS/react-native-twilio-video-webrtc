@@ -15,12 +15,15 @@ import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringDef;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.WritableArray;
@@ -52,6 +55,7 @@ import com.twilio.video.RemoteVideoTrackPublication;
 import com.twilio.video.RemoteVideoTrackStats;
 import com.twilio.video.Room;
 import com.twilio.video.Room.State;
+import com.twilio.video.ScreenCapturer;
 import com.twilio.video.StatsListener;
 import com.twilio.video.StatsReport;
 import com.twilio.video.TrackPublication;
@@ -129,7 +133,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         String ON_STATS_RECEIVED = "onStatsReceived";
     }
 
-    private final ThemedReactContext themedReactContext;
+    private static ThemedReactContext themedReactContext;
     private final RCTEventEmitter eventEmitter;
 
     private AudioFocusRequest audioFocusRequest;
@@ -142,7 +146,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private static Room room;
     private String roomName = null;
     private String accessToken = null;
-    private LocalParticipant localParticipant;
+    private static LocalParticipant localParticipant;
 
     /*
      * A VideoView receives frames from a local or remote video track and renders them
@@ -150,8 +154,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
      */
     private static VideoView thumbnailVideoView;
     private static LocalVideoTrack localVideoTrack;
-
     private static CameraCapturer cameraCapturer;
+
     private LocalAudioTrack localAudioTrack;
     private AudioManager audioManager;
     private int previousAudioMode;
@@ -159,9 +163,26 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private IntentFilter intentFilter;
     private BecomingNoisyReceiver myNoisyAudioStreamReceiver;
 
+    //screen share
+    private static LocalVideoTrack screenVideoTrack;
+    private static ScreenCapturer screenCapturer;
+    private ScreenCapturerManager screenCapturerManager;
+
+    private static final ScreenCapturer.Listener screenCapturerListener = new ScreenCapturer.Listener() {
+        @Override
+        public void onScreenCaptureError(String errorDescription) {
+            Log.e(TAG, "Screen capturer error: " + errorDescription);
+        }
+
+        @Override
+        public void onFirstFrameAvailable() {
+            Log.d(TAG, "First frame from screen capturer available");
+        }
+    };
+
     public CustomTwilioVideoView(ThemedReactContext context) {
         super(context);
-        this.themedReactContext = context;
+        themedReactContext = context;
         this.eventEmitter = themedReactContext.getJSModule(RCTEventEmitter.class);
 
         // add lifecycle for onResume and on onPause
@@ -179,11 +200,14 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         audioManager = (AudioManager) themedReactContext.getSystemService(Context.AUDIO_SERVICE);
         myNoisyAudioStreamReceiver = new BecomingNoisyReceiver();
         intentFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+        if (Build.VERSION.SDK_INT >= 29) {
+            screenCapturerManager = new ScreenCapturerManager(context);
+        }
     }
 
     // ===== SETUP =================================================================================
 
-    private VideoConstraints buildVideoConstraints() {
+    private static VideoConstraints buildVideoConstraints() {
         return new VideoConstraints.Builder()
                 .minVideoDimensions(VideoDimensions.CIF_VIDEO_DIMENSIONS)
                 .maxVideoDimensions(VideoDimensions.CIF_VIDEO_DIMENSIONS)
@@ -237,7 +261,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
 
         if (cameraCapturer.getSupportedFormats().size() > 0) {
-            localVideoTrack = LocalVideoTrack.create(getContext(), enableVideo, cameraCapturer, buildVideoConstraints());
+            localVideoTrack = LocalVideoTrack.create(getContext(), enableVideo, cameraCapturer, buildVideoConstraints(), "Camera");
             if (thumbnailVideoView != null && localVideoTrack != null) {
                 localVideoTrack.addRenderer(thumbnailVideoView);
             }
@@ -258,7 +282,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
              * If the local video track was released when the app was put in the background, recreate.
              */
             if (cameraCapturer != null && localVideoTrack == null) {
-                localVideoTrack = LocalVideoTrack.create(getContext(), true, cameraCapturer, buildVideoConstraints());
+                localVideoTrack = LocalVideoTrack.create(getContext(), true, cameraCapturer, buildVideoConstraints(), "Camera");
             }
 
             if (localVideoTrack != null) {
@@ -322,6 +346,15 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         if (localAudioTrack != null) {
             localAudioTrack.release();
             localAudioTrack = null;
+        }
+
+        if (screenVideoTrack != null) {
+            screenVideoTrack.release();
+            screenVideoTrack = null;
+        }
+
+        if (Build.VERSION.SDK_INT >= 29) {
+            screenCapturerManager.unbindService();
         }
     }
 
@@ -454,6 +487,16 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             cameraCapturer.stopCapture();
             cameraCapturer = null;
         }
+
+        if (screenVideoTrack != null) {
+            screenVideoTrack.release();
+            screenVideoTrack = null;
+        }
+
+        if (Build.VERSION.SDK_INT >= 29) {
+            screenCapturerManager.unbindService();
+        }
+
     }
 
     // ===== BUTTON LISTENERS ======================================================================
@@ -529,6 +572,21 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
     }
 
+    public void startScreenShare() {
+        stopPublishingVideo();
+        cameraCapturer.stopCapture();
+
+        if (Build.VERSION.SDK_INT >= 29) {
+            screenCapturerManager.startForeground();
+        }
+    }
+
+    public static void startScreenCapture(int resultCode, Intent data) {
+        //publish screen capturer
+        screenCapturer = new ScreenCapturer(themedReactContext, resultCode, data, screenCapturerListener);
+        screenVideoTrack = LocalVideoTrack.create(themedReactContext, true, screenCapturer, "Screen");
+        localParticipant.publishTrack(screenVideoTrack);
+    }
 
     private void convertBaseTrackStats(BaseTrackStats bs, WritableMap result) {
         result.putString("codec", bs.codec);
@@ -712,6 +770,14 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                 // Only reinitialize the UI if disconnect was not called from onDestroy()
                 if (!disconnectedFromOnDestroy) {
                     setAudioFocus(false);
+                }
+
+                if (screenVideoTrack != null) {
+                    screenVideoTrack.release();
+                    screenVideoTrack = null;
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        screenCapturerManager.unbindService();
+                    }
                 }
             }
 
