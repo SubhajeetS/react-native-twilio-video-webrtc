@@ -349,8 +349,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
 
         if (screenVideoTrack != null) {
-            screenVideoTrack.release();
-            screenVideoTrack = null;
+            releaseScreenShareResources();
         }
 
         if (Build.VERSION.SDK_INT >= 29) {
@@ -489,8 +488,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
 
         if (screenVideoTrack != null) {
-            screenVideoTrack.release();
-            screenVideoTrack = null;
+            releaseScreenShareResources();
         }
 
         if (Build.VERSION.SDK_INT >= 29) {
@@ -773,8 +771,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                 }
 
                 if (screenVideoTrack != null) {
-                    screenVideoTrack.release();
-                    screenVideoTrack = null;
+                    releaseScreenShareResources();
                     if (Build.VERSION.SDK_INT >= 29) {
                         screenCapturerManager.unbindService();
                     }
@@ -799,6 +796,18 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             public void onRecordingStopped(Room room) {
             }
         };
+    }
+
+    public void stopScreenShare() {
+        if (screenVideoTrack != null) {
+            releaseScreenShareResources();
+        }
+        onHostResume();
+    }
+
+    private void releaseScreenShareResources() {
+        screenVideoTrack.release();
+        screenVideoTrack = null;
     }
 
     /*

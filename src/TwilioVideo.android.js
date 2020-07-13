@@ -134,6 +134,7 @@ const nativeEvents = {
   stopPublishingVideo: 12,
   startPublishingVideo: 13, 
   startScreenShare: 14,
+  stopScreenShare: 15,
 }
 
 class CustomTwilioVideoView extends Component {
@@ -175,6 +176,10 @@ class CustomTwilioVideoView extends Component {
       console.log("permission failed", e);
     });
     
+  }
+
+  stopScreenShare () {
+    this.runCommand(nativeEvents.stopScreenShare, []);
   }
 
   componentWillUnmount () {
