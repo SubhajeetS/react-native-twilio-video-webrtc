@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -37,10 +38,13 @@ public class ScreenCapturerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if ("STOP_SHARING".equals(intent.getAction())) {
+            endForeground();
+        }
         return START_NOT_STICKY;
     }
 
-    public void startForeground() {
+    public void startForeground(Intent stopSharingIntent) {
         NotificationChannel chan = new NotificationChannel(CHANNEL_ID,
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_NONE);
@@ -48,12 +52,16 @@ public class ScreenCapturerService extends Service {
         assert manager != null;
         manager.createNotificationChannel(chan);
 
+        PendingIntent stopSharingPendingIntent = PendingIntent.getService(this, 0, stopSharingIntent, 0);
+
         final int notificationId = (int) System.currentTimeMillis();
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID);
         Notification notification = notificationBuilder.setOngoing(true)
-                .setContentTitle("ScreenCapturerService is running in the foreground")
+                .setContentTitle("Pulse")
+                .setContentText("You are sharing your screen")
                 .setPriority(NotificationManager.IMPORTANCE_MIN)
                 .setCategory(Notification.CATEGORY_SERVICE)
+                .addAction(R.drawable.ic_stop_notification_screenshare, "Stop Sharing", stopSharingPendingIntent)
                 .build();
         startForeground(notificationId, notification);
     }

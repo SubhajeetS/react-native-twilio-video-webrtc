@@ -52,7 +52,9 @@ public class ScreenCapturerManager {
     }
 
     void startForeground() {
-        mService.startForeground();
+        Intent intent  = new Intent(mContext, ScreenCapturerService.class);
+        intent.setAction("STOP_SHARING");
+        mService.startForeground(intent);
         currentState = State.START_FOREGROUND;
     }
 
