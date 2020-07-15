@@ -83,6 +83,8 @@ import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_E
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_ENABLED_VIDEO_TRACK;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_AUDIO_TRACK;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_VIDEO_TRACK;
+import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_SCREEN_SHARE_START;
+import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_SCREEN_SHARE_STOP;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_STATS_RECEIVED;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_VIDEO_CHANGED;
 
@@ -127,6 +129,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         String ON_PARTICIPANT_ENABLED_AUDIO_TRACK = "onParticipantEnabledAudioTrack";
         String ON_PARTICIPANT_DISABLED_AUDIO_TRACK = "onParticipantDisabledAudioTrack";
         String ON_STATS_RECEIVED = "onStatsReceived";
+        String ON_SCREEN_SHARE_START = "screenshareDidStart";
+        String ON_SCREEN_SHARE_STOP = "screenshareDidStop";
     }
 
     private static ThemedReactContext themedReactContext;
@@ -576,7 +580,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     public static void startScreenCapture(int resultCode, Intent data) {
-        //publish screen capturer
+        //publish screen capture
         screenCapturer = new ScreenCapturer(themedReactContext, resultCode, data, screenCapturerListener);
         screenVideoTrack = LocalVideoTrack.create(themedReactContext, true, screenCapturer, "Screen");
         localParticipant.publishTrack(screenVideoTrack);
@@ -584,14 +588,21 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
 
     @Override
     public void stopScreenShare() {
-        stopPublishingVideo();
+        videoPublishingOn = false;
         if (screenVideoTrack != null) {
-            releaseScreenShareResources();
+            if (localParticipant != null) {
+                localParticipant.unpublishTrack(screenVideoTrack);
+            }
+
+            screenVideoTrack.release();
+            screenVideoTrack = null;
         }
         if (Build.VERSION.SDK_INT >= 29) {
             screenCapturerManager.endForeground();
         }
         startPublishingVideo();
+        WritableMap event = new WritableNativeMap();
+        pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_STOP, event);
     }
 
     private void releaseScreenShareResources() {

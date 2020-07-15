@@ -116,7 +116,15 @@ const propTypes = {
   /**
    * Callback that is called when stats are received (after calling getStats)
    */
-  onStatsReceived: PropTypes.func
+  onStatsReceived: PropTypes.func,
+  /**
+   * Callback that is called when screenshare is started
+   */
+  screenshareDidStart: PropTypes.func,
+  /**
+   * Callback that is called when screenshare is stopped
+   */
+  screenshareDidStop: PropTypes.func,
 }
 
 const nativeEvents = {
@@ -171,6 +179,9 @@ class CustomTwilioVideoView extends Component {
     TwilioModule.requestPermission()
     .then(() => {
       console.log("permission granted");
+      if (this.props.screenshareDidStart) {
+        this.props.screenshareDidStart({});
+      }
     })
     .catch((e) => {
       console.log("permission failed", e);
@@ -254,7 +265,9 @@ class CustomTwilioVideoView extends Component {
       'onParticipantDisabledVideoTrack',
       'onParticipantEnabledAudioTrack',
       'onParticipantDisabledAudioTrack',
-      'onStatsReceived'
+      'onStatsReceived',
+      'screenshareDidStart',
+      'screenshareDidStop'
     ].reduce((wrappedEvents, eventName) => {
       if (this.props[eventName]) {
         return {
