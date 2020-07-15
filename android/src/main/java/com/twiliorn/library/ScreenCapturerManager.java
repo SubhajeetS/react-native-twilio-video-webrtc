@@ -51,10 +51,11 @@ public class ScreenCapturerManager {
         mContext.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
-    void startForeground() {
+    void startForeground(ServiceCallbacks callbacks) {
         Intent intent  = new Intent(mContext, ScreenCapturerService.class);
         intent.setAction("STOP_SHARING");
         mService.startForeground(intent);
+        mService.setCallbacks(callbacks);
         currentState = State.START_FOREGROUND;
     }
 
@@ -64,7 +65,9 @@ public class ScreenCapturerManager {
     }
 
     void unbindService() {
-        mContext.unbindService(connection);
-        currentState = State.UNBIND_SERVICE;
+        if (!State.UNBIND_SERVICE.equals(currentState)) {
+            mContext.unbindService(connection);
+            currentState = State.UNBIND_SERVICE;
+        }
     }
 }
