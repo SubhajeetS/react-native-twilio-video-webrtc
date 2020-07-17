@@ -575,7 +575,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         cameraCapturer.stopCapture();
 
         if (Build.VERSION.SDK_INT >= 29) {
-            screenCapturerManager.startForeground(this);
+            screenCapturerManager.startForeground(this, themedReactContext);
         }
     }
 

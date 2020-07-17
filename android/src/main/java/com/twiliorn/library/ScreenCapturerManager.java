@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
+import com.facebook.react.uimanager.ThemedReactContext;
+
 @TargetApi(29)
 public class ScreenCapturerManager {
     private ScreenCapturerService mService;
@@ -51,10 +53,10 @@ public class ScreenCapturerManager {
         mContext.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
-    void startForeground(ServiceCallbacks callbacks) {
+    void startForeground(ServiceCallbacks callbacks, ThemedReactContext themedReactContext) {
         Intent intent  = new Intent(mContext, ScreenCapturerService.class);
         intent.setAction("STOP_SHARING");
-        mService.startForeground(intent);
+        mService.startForeground(intent, themedReactContext);
         mService.setCallbacks(callbacks);
         currentState = State.START_FOREGROUND;
     }

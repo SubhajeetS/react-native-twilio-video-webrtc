@@ -1,6 +1,7 @@
 package com.twiliorn.library;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -12,10 +13,13 @@ import android.os.Binder;
 import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
 
+import com.facebook.react.uimanager.ThemedReactContext;
+
 @TargetApi(29)
 public class ScreenCapturerService extends Service {
     private static final String CHANNEL_ID = "screen_capture";
     private static final String CHANNEL_NAME = "Screen_Capture";
+    private ThemedReactContext themedReactContext;
 
     private ServiceCallbacks serviceCallbacks;
 
@@ -42,11 +46,27 @@ public class ScreenCapturerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if ("STOP_SHARING".equals(intent.getAction())) {
             serviceCallbacks.stopScreenShare();
+            PendingIntent resumeAppPendingIntent =  PendingIntent.getActivity(getApplicationContext(), 0, getResumeIntent(), PendingIntent.FLAG_UPDATE_CURRENT);
+            try {
+                resumeAppPendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+                e.printStackTrace();
+            }
         }
         return START_NOT_STICKY;
     }
 
-    public void startForeground(Intent stopSharingIntent) {
+    private Intent getResumeIntent() {
+        Intent resumeIntent = new Intent(getApplicationContext(), themedReactContext.getCurrentActivity().getClass());
+        resumeIntent.setAction(Intent.ACTION_MAIN);
+        resumeIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        resumeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return resumeIntent;
+    }
+
+
+    public void startForeground(Intent stopSharingIntent, ThemedReactContext themedReactContext) {
+        this.themedReactContext = themedReactContext;
         NotificationChannel chan = new NotificationChannel(CHANNEL_ID,
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_NONE);
@@ -57,10 +77,7 @@ public class ScreenCapturerService extends Service {
 
         PendingIntent stopSharingPendingIntent = PendingIntent.getService(this, 0, stopSharingIntent, 0);
 
-        Intent doNothingIntent = new Intent(this, ScreenCapturerService.class);
-        doNothingIntent.setAction("DO_NOTHING");
-
-        PendingIntent doNothingPendingIntent =  PendingIntent.getService(this, 1, doNothingIntent, 0);
+        PendingIntent resumeAppPendingIntent =  PendingIntent.getActivity(getApplicationContext(), 0, getResumeIntent(), PendingIntent.FLAG_UPDATE_CURRENT);
 
         NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
 
@@ -74,7 +91,7 @@ public class ScreenCapturerService extends Service {
                 .setContentTitle("Pulse")
                 .setContentText("You are sharing your screen")
                 .setSmallIcon(R.drawable.ic_stop_notification_screenshare)
-                .setContentIntent(doNothingPendingIntent)
+                .setContentIntent(resumeAppPendingIntent)
                 .setPriority(NotificationManager.IMPORTANCE_MIN)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .addAction(R.drawable.ic_stop_notification_screenshare, "Stop Screen Share", stopSharingPendingIntent)

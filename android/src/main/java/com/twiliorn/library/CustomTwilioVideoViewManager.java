@@ -8,7 +8,7 @@
  */
 package com.twiliorn.library;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.common.MapBuilder;
@@ -25,6 +25,8 @@ import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_CONNECT_FAILU
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_DISCONNECTED;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_CONNECTED;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_DISCONNECTED;
+import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_SCREEN_SHARE_START;
+import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_SCREEN_SHARE_STOP;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_VIDEO_CHANGED;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_ADDED_VIDEO_TRACK;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_VIDEO_TRACK;
@@ -153,6 +155,10 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
                 ON_PARTICIPANT_ENABLED_AUDIO_TRACK, MapBuilder.of("registrationName", ON_PARTICIPANT_ENABLED_AUDIO_TRACK),
                 ON_PARTICIPANT_DISABLED_AUDIO_TRACK, MapBuilder.of("registrationName", ON_PARTICIPANT_DISABLED_AUDIO_TRACK),
                 ON_STATS_RECEIVED, MapBuilder.of("registrationName", ON_STATS_RECEIVED)
+        ));
+        map.putAll(MapBuilder.of(
+                ON_SCREEN_SHARE_START, MapBuilder.of("registrationName", ON_SCREEN_SHARE_START),
+                ON_SCREEN_SHARE_STOP, MapBuilder.of("registrationName", ON_SCREEN_SHARE_STOP)
         ));
 
         return map;
