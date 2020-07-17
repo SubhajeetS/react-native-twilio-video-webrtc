@@ -129,8 +129,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         String ON_PARTICIPANT_ENABLED_AUDIO_TRACK = "onParticipantEnabledAudioTrack";
         String ON_PARTICIPANT_DISABLED_AUDIO_TRACK = "onParticipantDisabledAudioTrack";
         String ON_STATS_RECEIVED = "onStatsReceived";
-        String ON_SCREEN_SHARE_START = "screenshareDidStart";
-        String ON_SCREEN_SHARE_STOP = "screenshareDidStop";
+        String ON_SCREEN_SHARE_START = "onScreenshareStart";
+        String ON_SCREEN_SHARE_STOP = "onScreenshareStop";
     }
 
     private static ThemedReactContext themedReactContext;
